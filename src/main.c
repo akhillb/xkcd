@@ -68,25 +68,20 @@ int main(void)
             curl_easy_strerror(res));
   }
   else {
-    printf("%lu bytes retrieved\n", (unsigned long)chunk.size);
     jobj = json_tokener_parse(chunk.memory);
     json_object_object_get_ex(jobj, "img", &jobj1);
-    printf("jobj from str:\n---\n%s\n---\n", json_object_to_json_string_ext(jobj1, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
   }
   const char *json_string = json_object_to_json_string_ext(jobj1, JSON_C_TO_STRING_SPACED);
   char new_json_string[strlen(json_string)];
   int i = 0;
   int j = 0;
   while(json_string[i] != '\0') {
-    printf("%c\n", json_string[i]);
     i++;
     if(json_string[i] == '"' || json_string[i] == '\\') continue;
     new_json_string[j] = json_string[i];
     j++;
-    printf("%i -> %i\n", i, j);
   }
   new_json_string[j] = '\0';
-  printf("%s\n", new_json_string);
 
   curl_easy_setopt(curl_handle, CURLOPT_URL, new_json_string);
   curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
