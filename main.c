@@ -30,6 +30,12 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
  
   return realsize;
 }
+
+static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
+  return written;
+}
  
 int main(void)
 {
@@ -37,6 +43,9 @@ int main(void)
   CURLcode res;
   struct json_object *jobj;
   struct json_object *jobj1;
+
+  static const char *pagefilename = "xkcd.png";
+  FILE *pagefile;
  
   struct MemoryStruct chunk;
  
@@ -63,6 +72,33 @@ int main(void)
     jobj = json_tokener_parse(chunk.memory);
     json_object_object_get_ex(jobj, "img", &jobj1);
     printf("jobj from str:\n---\n%s\n---\n", json_object_to_json_string_ext(jobj1, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
+  }
+  const char *json_string = json_object_to_json_string_ext(jobj1, JSON_C_TO_STRING_SPACED);
+  char new_json_string[strlen(json_string)];
+  int i = 0;
+  int j = 0;
+  while(json_string[i] != '\0') {
+    printf("%c\n", json_string[i]);
+    i++;
+    if(json_string[i] == '"' || json_string[i] == '\\') continue;
+    new_json_string[j] = json_string[i];
+    j++;
+    printf("%i -> %i\n", i, j);
+  }
+  new_json_string[j] = '\0';
+  printf("%s\n", new_json_string);
+
+  curl_easy_setopt(curl_handle, CURLOPT_URL, new_json_string);
+  curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
+	pagefile = fopen(pagefilename, "wb");
+  if(pagefile) {
+ 
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, pagefile);
+ 
+    curl_easy_perform(curl_handle);
+ 
+    fclose(pagefile);
   }
  
   curl_easy_cleanup(curl_handle);
